@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso al Sistema - Clínica Médica</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-100">
+        <!-- Ícono Encabezado -->
+        <div class="flex justify-center mb-4">
+            <div class="bg-blue-50 p-3 rounded-full text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+            </div>
+        </div>
+
+        <h1 class="text-2xl font-bold text-center text-slate-800 mb-1">Bienvenido</h1>
+        <p class="text-center text-slate-400 text-sm mb-6">Ingresa tus credenciales para acceder</p>
+
+        <!-- Pestañas de Navegación -->
+        <div class="flex border-b border-slate-200 mb-6">
+            <button id="tabLogin" onclick="switchTab('login')" class="w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-blue-600 text-blue-600 focus:outline-none">
+                Iniciar Sesión
+            </button>
+            <button id="tabRegister" onclick="switchTab('register')" class="w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 focus:outline-none">
+                Registrarse
+            </button>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alertaAuth" class="hidden mb-4 p-3 rounded-lg text-sm text-center font-medium"></div>
+
+        <!-- FORMULARIO DE INICIO DE SESIÓN -->
+        <form id="formLogin" class="space-y-4" onsubmit="handleLogin(event)">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Correo Electrónico</label>
+                <input type="email" id="loginEmail" required placeholder="ejemplo@correo.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Contraseña</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Tipo de Usuario</label>
+                <select id="loginRole" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                    <option value="patient">Paciente</option>
+                    <option value="doctor">Médico / Doctor</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-md">
+                Entrar al Sistema
+            </button>
+        </form>
+
+        <!-- FORMULARIO DE REGISTRO -->
+        <form id="formRegister" class="space-y-4 hidden" onsubmit="handleRegister(event)">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Nombre Completo</label>
+                <input type="text" id="regName" required placeholder="Tu nombre" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Correo Electrónico</label>
+                <input type="email" id="regEmail" required placeholder="ejemplo@correo.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Contraseña</label>
+                <input type="password" id="regPassword" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Registrarse como</label>
+                <select id="regRole" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                    <option value="patient">Paciente</option>
+                    <option value="doctor">Médico / Doctor</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-md">
+                Crear Cuenta
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = "https://backend-citas-production-b607.up.railway.app";
+
+        function switchTab(tab) {
+            const formLogin = document.getElementById('formLogin');
+            const formRegister = document.getElementById('formRegister');
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const alerta = document.getElementById('alertaAuth');
+            
+            alerta.classList.add('hidden');
+
+            if (tab === 'login') {
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+                tabLogin.className = "w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                tabRegister.className = "w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 focus:outline-none";
+            } else {
+                formLogin.classList.add('hidden');
+                formRegister.classList.remove('hidden');
+                tabRegister.className = "w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-emerald-600 text-emerald-600 focus:outline-none";
+                tabLogin.className = "w-1/2 py-2 text-center text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 focus:outline-none";
+            }
+        }
+
+        function showAlert(message, isError = true) {
+            const alerta = document.getElementById('alertaAuth');
+            alerta.textContent = message;
+            alerta.className = `mb-4 p-3 rounded-lg text-sm text-center font-medium ${isError ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`;
+            alerta.classList.remove('hidden');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    if (data.user) {
+                        localStorage.setItem('userRole', data.user.role || role);
+                        localStorage.setItem('userName', data.user.name || '');
+                    }
+                    window.location.href = 'dashboard.html';
+                } else {
+                    showAlert(data.message || data.error || "Credenciales incorrectas");
+                }
+            } catch (error) {
+                showAlert("Error al conectar con el servidor en Railway");
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.", false);
+                    setTimeout(() => switchTab('login'), 1500);
+                } else {
+                    showAlert(data.message || data.error || "Error al registrar usuario");
+                }
+            } catch (error) {
+                showAlert("Error al conectar con el servidor en Railway");
+            }
+        }
+    </script>
+</body>
+</html>
