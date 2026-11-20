@@ -1,0 +1,240 @@
+{
+  "generatedAt": "2026-11-20T06:07:57.994Z",
+  "uri": "bolt://127.0.0.1:7687",
+  "database": "neo4j",
+  "adminUser": "neo4j",
+  "edition": "enterprise",
+  "validation": [
+    {
+      "id": "V-01",
+      "name": "SHOW USERS",
+      "status": "PASS",
+      "rowCount": 4,
+      "sample": {
+        "user": "neo4j",
+        "roles": [
+          "admin",
+          "PUBLIC"
+        ],
+        "passwordChangeRequired": false,
+        "suspended": false,
+        "home": null
+      }
+    },
+    {
+      "id": "V-02",
+      "name": "SHOW ROLES",
+      "status": "PASS",
+      "rowCount": 6,
+      "sample": {
+        "role": "PUBLIC"
+      }
+    },
+    {
+      "id": "V-03",
+      "name": "SHOW POPULATED ROLES WITH USERS",
+      "status": "PASS",
+      "rowCount": 8,
+      "sample": {
+        "role": "PUBLIC",
+        "member": "neo4j"
+      }
+    },
+    {
+      "id": "V-04",
+      "name": "SHOW USER usr_consulta_reader PRIVILEGES",
+      "status": "PASS",
+      "rowCount": 9,
+      "sample": {
+        "command": "GRANT ACCESS ON DATABASE * TO $role",
+        "users": [
+          "usr_consulta_reader"
+        ]
+      }
+    },
+    {
+      "id": "V-05",
+      "name": "SHOW USER usr_agenda_editor PRIVILEGES",
+      "status": "PASS",
+      "rowCount": 10,
+      "sample": {
+        "command": "GRANT ACCESS ON DATABASE * TO $role",
+        "users": [
+          "usr_agenda_editor"
+        ]
+      }
+    },
+    {
+      "id": "V-06",
+      "name": "SHOW USER usr_esquema_architect PRIVILEGES",
+      "status": "PASS",
+      "rowCount": 13,
+      "sample": {
+        "command": "GRANT ACCESS ON DATABASE * TO $role",
+        "users": [
+          "usr_esquema_architect"
+        ]
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "R-01",
+      "role": "reader",
+      "name": "Consultar citas y sus relaciones",
+      "expected": "OK",
+      "actual": "OK",
+      "status": "PASS",
+      "rowCount": 10,
+      "error": null,
+      "sample": {
+        "usuario": "Dra. Maria Lopez",
+        "relacion": "ATIENDE",
+        "cita": 101,
+        "estado": "Confirmada"
+      },
+      "query": "MATCH (u:Usuario)-[rel]->(c:Cita)\nRETURN u.nombre AS usuario, type(rel) AS relacion, c.id AS cita, c.estado AS estado\nORDER BY cita, usuario"
+    },
+    {
+      "id": "R-02",
+      "role": "reader",
+      "name": "Intentar modificar el estado de una cita",
+      "expected": "Forbidden",
+      "actual": "Neo.ClientError.Security.Forbidden",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": {
+        "code": "Neo.ClientError.Security.Forbidden",
+        "message": "Set property for property 'estado' on database 'neo4j' is not allowed for user 'usr_consulta_reader' with roles [PUBLIC, reader]."
+      },
+      "sample": null,
+      "query": "MATCH (c:Cita {id: 101})\nSET c.estado = 'Intento reader'\nRETURN c.id AS cita, c.estado AS estado"
+    },
+    {
+      "id": "R-03",
+      "role": "reader",
+      "name": "Intentar listar usuarios del DBMS",
+      "expected": "Forbidden",
+      "actual": "Neo.ClientError.Security.Forbidden",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": {
+        "code": "Neo.ClientError.Security.Forbidden",
+        "message": "Permission has not been granted for SHOW USER. Try executing SHOW USER PRIVILEGES to determine the missing or denied privileges. In case of missing privileges, they need to be granted (See GRANT). In case of denied privileges, they need to be revoked (See REVOKE) and granted."
+      },
+      "sample": null,
+      "query": "SHOW USERS"
+    },
+    {
+      "id": "E-01",
+      "role": "editor",
+      "name": "Consultar relaciones paciente-doctor-cita",
+      "expected": "OK",
+      "actual": "OK",
+      "status": "PASS",
+      "rowCount": 25,
+      "error": null,
+      "sample": {
+        "paciente": "Juan Perez",
+        "doctor": "Dra. Maria Lopez",
+        "cita": 101,
+        "estado": "Confirmada"
+      },
+      "query": "MATCH (paciente:Usuario)-[:SOLICITO]->(c:Cita)<-[:ATIENDE]-(doctor:Usuario)\nRETURN paciente.nombre AS paciente, doctor.nombre AS doctor, c.id AS cita, c.estado AS estado"
+    },
+    {
+      "id": "E-02",
+      "role": "editor",
+      "name": "Crear cita de prueba con id 901",
+      "expected": "OK",
+      "actual": "OK",
+      "status": "PASS",
+      "rowCount": 1,
+      "error": null,
+      "sample": {
+        "cita": 901,
+        "estado": "Pendiente"
+      },
+      "query": "CREATE (c:Cita {id: 901, fecha: '2026-12-01', hora: '11:00', estado: 'Pendiente'})\nRETURN c.id AS cita, c.estado AS estado"
+    },
+    {
+      "id": "E-03",
+      "role": "editor",
+      "name": "Intentar crear constraint de esquema",
+      "expected": "Forbidden",
+      "actual": "Neo.ClientError.Security.Forbidden",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": {
+        "code": "Neo.ClientError.Security.Forbidden",
+        "message": "Schema operation 'create_constraint' on database 'neo4j' is not allowed for user 'usr_agenda_editor' with roles [PUBLIC, editor]."
+      },
+      "sample": null,
+      "query": "CREATE CONSTRAINT cita_id_denegada IF NOT EXISTS\nFOR (c:Cita) REQUIRE c.fecha IS UNIQUE"
+    },
+    {
+      "id": "E-04",
+      "role": "editor",
+      "name": "Intentar crear usuario del DBMS",
+      "expected": "Forbidden",
+      "actual": "Neo.ClientError.Security.Forbidden",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": {
+        "code": "Neo.ClientError.Security.Forbidden",
+        "message": "Permission has not been granted for CREATE USER. Try executing SHOW USER PRIVILEGES to determine the missing or denied privileges. In case of missing privileges, they need to be granted (See GRANT). In case of denied privileges, they need to be revoked (See REVOKE) and granted."
+      },
+      "sample": null,
+      "query": "CREATE USER usr_creado_por_editor IF NOT EXISTS\nSET PASSWORD 'NoAutorizado_Practica11_2026!'\nCHANGE NOT REQUIRED"
+    },
+    {
+      "id": "A-01",
+      "role": "architect",
+      "name": "Consultar constraints existentes",
+      "expected": "OK",
+      "actual": "OK",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": null,
+      "sample": null,
+      "query": "SHOW CONSTRAINTS"
+    },
+    {
+      "id": "A-02",
+      "role": "architect",
+      "name": "Crear constraint de unicidad sobre Cita.id",
+      "expected": "OK",
+      "actual": "OK",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": null,
+      "sample": null,
+      "query": "CREATE CONSTRAINT cita_id_unico IF NOT EXISTS\nFOR (c:Cita) REQUIRE c.id IS UNIQUE"
+    },
+    {
+      "id": "A-03",
+      "role": "architect",
+      "name": "Intentar listar usuarios del DBMS",
+      "expected": "Forbidden",
+      "actual": "Neo.ClientError.Security.Forbidden",
+      "status": "PASS",
+      "rowCount": 0,
+      "error": {
+        "code": "Neo.ClientError.Security.Forbidden",
+        "message": "Permission has not been granted for SHOW USER. Try executing SHOW USER PRIVILEGES to determine the missing or denied privileges. In case of missing privileges, they need to be granted (See GRANT). In case of denied privileges, they need to be revoked (See REVOKE) and granted."
+      },
+      "sample": null,
+      "query": "SHOW USERS"
+    }
+  ],
+  "cleanup": [
+    {
+      "name": "Eliminar cita de prueba id 901",
+      "status": "OK"
+    },
+    {
+      "name": "Eliminar constraint de prueba cita_id_unico",
+      "status": "OK"
+    }
+  ]
+}
